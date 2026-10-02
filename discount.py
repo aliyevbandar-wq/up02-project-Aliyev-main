@@ -1,82 +1,47 @@
-"""Модуль расчёта скидки."""
-from datetime import datetime, timedelta
-import sqlite3
-<<<<<<< HEAD
-from config import DB_PATH
-=======
+# discount.py
+from datetime import timedelta
 
-# Указываем имя вашей реальной базы данных
-# Указываем правильный путь к папке с вашей БД
-DB_PATH = "databases/db_variant_14.db"
->>>>>>> dcf49ad74c61951ad79fe1974c51553bc1cedd54
+# --- ЗАГЛУШКА: имитация данных из таблицы «Заказ» ---
+# В реальном проекте замени это на SQL-запрос к БД.
+ORDERS_DB = [
+    {"product_id": 1, "order_date": "2026-09-10"},
+    {"product_id": 3, "order_date": "2026-09-20"},
+    {"product_id": 1, "order_date": "2026-10-05"},
+]
 
+def _get_orders_for_product_in_period(product_id, start_date, end_date):
+    """Возвращает список заказов на товар за период (заглушка)."""
+    count = 0
+    for order in ORDERS_DB:
+        order_date = order["order_date"]
+        # Простая проверка диапазона дат
+        if order_date >= start_date.strftime("%Y-%m-%d") and order_date <= end_date.strftime("%Y-%m-%d"):
+            if order["product_id"] == product_id:
+                count += 1
+    return count
 
-def get_previous_month_range(date):
+def calculate_price_with_discount(product_id, price, date):
     """
-    Возвращает (начало, конец) предыдущего месяца.
-    
-    :param date: дата расчёта
-    :return: (start_date, end_date) в формате YYYY-MM-DD
+    Рассчитывает цену со скидкой.
+    Логика: если в предыдущем месяце не было заказов на товар → скидка 25%.
     """
-    first_day = date.replace(day=1)
-    last_day_prev = first_day - timedelta(days=1)
+    if price == 0:
+        return 0
+
+    # Определяем начало и конец предыдущего месяца относительно date
+    # 1. Первый день текущего месяца
+    first_day_current = date.replace(day=1)
+    # 2. Последний день предыдущего месяца = первый день текущего - 1 день
+    last_day_prev = first_day_current - timedelta(days=1)
+    # 3. Первый день предыдущего месяца
     first_day_prev = last_day_prev.replace(day=1)
-    return (
-        first_day_prev.strftime("%Y-%m-%d"),
-        last_day_prev.strftime("%Y-%m-%d")
-    )
 
-<<<<<<< HEAD
+    # Проверяем наличие заказов в предыдущем месяце
+    orders_count = _get_orders_for_product_in_period(product_id, first_day_prev, last_day_prev)
 
-def has_orders_in_previous_month(product_id, date):
-    """
-    Есть ли заказы товара в предыдущем месяце?
-    
-    :param product_id: id товара
-    :param date: дата расчёта
-    :return: True / False
-=======
-def has_orders_in_previous_month(product_id, date):
-    """
-    Есть ли заказы товара в предыдущем месяце?
->>>>>>> dcf49ad74c61951ad79fe1974c51553bc1cedd54
-    """
-    start, end = get_previous_month_range(date)
-
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-    cur.execute(
-        "SELECT COUNT(*) FROM Заказ "
-        "WHERE товар_id = ? AND дата BETWEEN ? AND ?",
-        (product_id, start, end)
-    )
-    count = cur.fetchone()[0]
-    conn.close()
-    return count > 0
-
-<<<<<<< HEAD
-
-def calculate_price_with_discount(product_id, price, date): # type: ignore
-    """
-    Рассчитывает цену со скидкой 25%.
-    
-    :param product_id: id товара
-    :param price: базовая цена
-    :param date: дата расчёта
-    :return: цена со скидкой или без
-    """
-    if has_orders_in_previous_month(product_id, date):
+    if orders_count == 0:
+        # Скидка 25%
+        return int(price * 0.75)
+    else:
+        # Без скидки
         return price
-    return price * 0.75
-def calculate_price_with_discount(product_id, price, date):
-    """
-    Рассчитывает цену со скидкой 25% на основе заказов в БД.
-=======
-def calculate_price_with_discount(product_id, price, date):
-    """
-    Рассчитывает цену со скидкой 25%.
->>>>>>> dcf49ad74c61951ad79fe1974c51553bc1cedd54
-    """
-    if has_orders_in_previous_month(product_id, date):
-        return price
-    return price * 0.75
