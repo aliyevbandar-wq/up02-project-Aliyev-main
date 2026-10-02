@@ -30,7 +30,7 @@ def run_tests():
         (500.0, 1, 450.0, "Тест 4: Дорогой товар, мелкий остаток"),
         (0.0,   0, 0.0,   "Тест 5: Нулевая цена и нулевой остаток")
     ]
-    
+  # проверка  
     print("--- Запуск тестов функции скидки ---")
     for i, (price, stock, expected, desc) in enumerate(test_cases, 1):
         result = calculate_price_with_discount(price, stock)
