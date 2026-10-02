@@ -36,7 +36,7 @@ def run_tests():
         result = calculate_price_with_discount(price, stock)
         assert abs(result - expected) < 1e-9, f"Ошибка в {desc}: ожидалось {expected}, получили {result}"
         print(f"[OK] {desc} — Результат: {result}")
-    # проверка дат
+    
     print("\n--- Проверка дат из шпаргалки ---")
     test_date = datetime(2026, 10, 15)
     start, end = get_previous_month_range(test_date)
