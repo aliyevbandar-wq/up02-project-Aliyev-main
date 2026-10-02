@@ -4,7 +4,11 @@ from discount import calculate_price_with_discount
 
 
 class Product:
+<<<<<<< HEAD
     """Класс Товар (Фильм)."""
+=======
+    """Класс Товар."""
+>>>>>>> dcf49ad74c61951ad79fe1974c51553bc1cedd54
 
     def __init__(self, product_id, name, category, price, quantity):
         self.id = product_id
@@ -20,7 +24,10 @@ class Product:
         """Цена со скидкой по алгоритму ДЭ."""
         if date is None:
             date = datetime.now()
+<<<<<<< HEAD
         # Метод корректно передает 3 аргумента (id, базовая цена, дата)
+=======
+>>>>>>> dcf49ad74c61951ad79fe1974c51553bc1cedd54
         return calculate_price_with_discount(self.id, self.price, date)
 
     def indicator(self):
@@ -32,3 +39,18 @@ class Product:
             f"{self.price} руб. × {self.quantity} = {self.total()} руб. "
             f"({self.indicator()})"
         )
+<<<<<<< HEAD
+=======
+
+
+# Код для мгновенной проверки Задания 8.3 прямо при запуске файла
+if __name__ == "__main__":
+    p = Product(2, "Ботинки Timberland", "Ботинки", 15000, 3)
+    date_test = datetime(2026, 10, 15)
+    print("=" * 40)
+    print("ПРОВЕРКА ИНТЕГРАЦИИ В КЛАСС PRODUCT")
+    print("=" * 40)
+    print(f"Базовая цена: {p.price}")
+    print(f"Со скидкой: {p.price_with_discount_auto(date_test)}")
+    print("=" * 40)
+>>>>>>> dcf49ad74c61951ad79fe1974c51553bc1cedd54

@@ -1,7 +1,14 @@
 """Модуль расчёта скидки."""
 from datetime import datetime, timedelta
 import sqlite3
+<<<<<<< HEAD
 from config import DB_PATH
+=======
+
+# Указываем имя вашей реальной базы данных
+# Указываем правильный путь к папке с вашей БД
+DB_PATH = "databases/db_variant_14.db"
+>>>>>>> dcf49ad74c61951ad79fe1974c51553bc1cedd54
 
 
 def get_previous_month_range(date):
@@ -19,6 +26,7 @@ def get_previous_month_range(date):
         last_day_prev.strftime("%Y-%m-%d")
     )
 
+<<<<<<< HEAD
 
 def has_orders_in_previous_month(product_id, date):
     """
@@ -27,6 +35,11 @@ def has_orders_in_previous_month(product_id, date):
     :param product_id: id товара
     :param date: дата расчёта
     :return: True / False
+=======
+def has_orders_in_previous_month(product_id, date):
+    """
+    Есть ли заказы товара в предыдущем месяце?
+>>>>>>> dcf49ad74c61951ad79fe1974c51553bc1cedd54
     """
     start, end = get_previous_month_range(date)
 
@@ -41,6 +54,7 @@ def has_orders_in_previous_month(product_id, date):
     conn.close()
     return count > 0
 
+<<<<<<< HEAD
 
 def calculate_price_with_discount(product_id, price, date): # type: ignore
     """
@@ -57,6 +71,11 @@ def calculate_price_with_discount(product_id, price, date): # type: ignore
 def calculate_price_with_discount(product_id, price, date):
     """
     Рассчитывает цену со скидкой 25% на основе заказов в БД.
+=======
+def calculate_price_with_discount(product_id, price, date):
+    """
+    Рассчитывает цену со скидкой 25%.
+>>>>>>> dcf49ad74c61951ad79fe1974c51553bc1cedd54
     """
     if has_orders_in_previous_month(product_id, date):
         return price
