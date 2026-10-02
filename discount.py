@@ -42,7 +42,7 @@ def has_orders_in_previous_month(product_id, date):
     return count > 0
 
 
-def calculate_price_with_discount(product_id, price, date):
+def calculate_price_with_discount(product_id, price, date): # type: ignore
     """
     Рассчитывает цену со скидкой 25%.
     
