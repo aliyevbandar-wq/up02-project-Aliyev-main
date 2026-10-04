@@ -23,6 +23,11 @@ class Product:
         # Метод корректно передает 3 аргумента (id, базовая цена, дата)
         return calculate_price_with_discount(self.id, self.price, date)
 
+    # --- НОВЫЙ МЕТОД ИЗ ЗАДАНИЯ 3.3 ---
+    def discounted_price(self):
+        """Цена со скидкой 25% (упрощённо)."""
+        return self.price * 0.75
+
     def indicator(self):
         return "много" if self.quantity > 5 else "мало"
 
@@ -43,4 +48,6 @@ if __name__ == "__main__":
     print("=" * 40)
     print(f"Базовая цена: {p.price}")
     print(f"Со скидкой: {p.price_with_discount_auto(date_test)}")
+    # Добавим проверку нового метода для наглядности:
+    print(f"Упрощенная скидка (25%): {p.discounted_price()}")
     print("=" * 40)
