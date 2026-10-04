@@ -34,7 +34,7 @@ class Product:
 
     def discounted_price(self):
         """Цена со скидкой 25% (упрощённо)."""
-        return self.price * 0.75
+        return self.price * 0.90   # изменено в main
 
     def indicator(self):
         return "много" if self.quantity > 5 else "мало"
