@@ -29,7 +29,7 @@ class Product:
         """Цена со скидкой по алгоритму ДЭ."""
         if date is None:
             date = datetime.now()
-        # Метод корректно передает 3 аргумента (id, базовая цена, дата)
+        # Метод корректно передает 3 аргумента (id, базовая цена, дата).
         return calculate_price_with_discount(self.id, self.price, date)
 
     def discounted_price(self):
