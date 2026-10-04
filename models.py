@@ -7,7 +7,16 @@ class Product:
     """Класс Товар (Фильм)."""
 
     def __init__(self, product_id, name, category, price, quantity):
-        self.id = product_id
+        """
+        Инициализация товара.
+
+        :param product_id: идентификатор
+        :param name: название
+        :param category: категория
+        :param price: цена
+        :param quantity: количество
+        """
+        self.id = product_id  # Используем self.id для совместимости с price_with_discount_auto
         self.name = name
         self.category = category
         self.price = price
@@ -23,7 +32,6 @@ class Product:
         # Метод корректно передает 3 аргумента (id, базовая цена, дата)
         return calculate_price_with_discount(self.id, self.price, date)
 
-    # --- НОВЫЙ МЕТОД ИЗ ЗАДАНИЯ 3.3 ---
     def discounted_price(self):
         """Цена со скидкой 25% (упрощённо)."""
         return self.price * 0.75
@@ -48,6 +56,5 @@ if __name__ == "__main__":
     print("=" * 40)
     print(f"Базовая цена: {p.price}")
     print(f"Со скидкой: {p.price_with_discount_auto(date_test)}")
-    # Добавим проверку нового метода для наглядности:
     print(f"Упрощенная скидка (25%): {p.discounted_price()}")
     print("=" * 40)
