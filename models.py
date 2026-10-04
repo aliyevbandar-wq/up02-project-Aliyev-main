@@ -58,3 +58,12 @@ if __name__ == "__main__":
     print(f"Со скидкой: {p.price_with_discount_auto(date_test)}")
     print(f"Упрощенная скидка (25%): {p.discounted_price()}")
     print("=" * 40)
+class Order:
+    """Класс Заказ."""
+    def __init__(self, order_id, date, client):
+        self.id = order_id
+        self.date = date
+        self.client = client
+
+    def order_info(self):
+        return f"Заказ №{self.id} от {self.date}: {self.client}"
