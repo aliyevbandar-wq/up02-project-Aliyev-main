@@ -38,6 +38,6 @@ credentials.txt
 .env
 *.key
 
-# Временные файлы
+# Временные файлы   
 *.tmp
 *.bak
