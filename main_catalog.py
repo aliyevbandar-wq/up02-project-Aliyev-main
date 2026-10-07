@@ -1,75 +1,98 @@
-"""Главное окно приложения с каталогом."""
+"""Главное окно с каталогом."""
 import tkinter as tk
 from tkinter import ttk
-from PIL import Image, ImageTk  # type: ignore
 import os
+import ctypes
 
-from config import APP_TITLE, FONT_FAMILY
-import db_loader as db  
+if os.name == "nt":
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('cinema.catalog.v1')
+
+# Импорт стилей по заданию 7.4
+from styles import COLOR_SECONDARY_BG, FONT_FAMILY, FONT_SIZE_TITLE, font
+from config import APP_TITLE
+import db_loader as db  # Подключаем db_loader, где хранятся ваши данные
 from catalog import create_product_card
+from resources import load_image_proportional, PATH_LOGO, PATH_ICON
+
+
+def set_app_icon(root, icon_path):
+    """Устанавливает иконку приложения кроссплатформенно."""
+    try:
+        if os.name == "nt":   # Windows
+            if os.path.exists(icon_path):
+                root.iconbitmap(icon_path)
+        else:                  # Linux/Mac
+            png_path = icon_path.replace(".ico", ".png")
+            icon_img = load_image_proportional(png_path, max_size=(32, 32))
+            if icon_img:
+                root.iconphoto(True, icon_img)
+                root._icon_photo = icon_img   
+    except Exception as e:
+        print(f"Не удалось установить иконку: {e}")
 
 
 class CatalogWindow:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title(APP_TITLE)
-        self.root.geometry("950x750")
+        self.root.geometry("900x700")
+
+        # Иконка приложения
+        set_app_icon(self.root, PATH_ICON)
+
         self.build_ui()
         self.load_products()
 
     def build_ui(self):
-        # Шапка каталога
-        header = tk.Frame(self.root, bg="#D2F6E7")
-        header.pack(fill="x", side="top")
+        # Шапка с логотипом и заголовком
+        header = tk.Frame(self.root, bg=COLOR_SECONDARY_BG, height=80)
+        header.pack(fill="x")
+        header.pack_propagate(False)
 
-        # 📌 ЗАДАНИЕ 2: Добавление логотипа компании
-        logo_path = "resources/logo.png"
-        if os.path.exists(logo_path):
-            try:
-                logo = Image.open(logo_path).resize((50, 50))
-                logo_photo = ImageTk.PhotoImage(logo)
-                logo_label = tk.Label(header, image=logo_photo, bg="#D2F6E7")
-                logo_label.__dict__['image'] = logo_photo
-                logo_label.pack(side="left", padx=15, pady=10)
-            except Exception:
-                tk.Label(header, text="[LOGO]", bg="#D2F6E7").pack(side="left", padx=15)
+        # Логотип (слева) — с сохранением пропорций!
+        logo = load_image_proportional(PATH_LOGO, max_size=(60, 60))
+        if logo:
+            logo_label = tk.Label(header, image=logo, bg=COLOR_SECONDARY_BG)
+            logo_label.__dict__['image'] = logo  
+            logo_label.pack(side="left", padx=15)
         else:
-            tk.Label(header, text="[LOGO]", bg="#D2F6E7").pack(side="left", padx=15)
+            tk.Label(header, text="[ЛОГОТИП]",
+                     bg=COLOR_SECONDARY_BG).pack(side="left", padx=15)
 
-        # Текст заголовка
+        # Заголовок (по центру)
         tk.Label(header, text="КАТАЛОГ ТОВАРОВ",
-                 font=(FONT_FAMILY, 16, "bold"),
-                 bg="#D2F6E7").pack(side="left", pady=15)
+                 font=font(FONT_SIZE_TITLE, bold=True),  
+                 bg=COLOR_SECONDARY_BG).pack(expand=True)
 
-        # Область с прокруткой (Canvas)
-        container = tk.Frame(self.root, bg="white")
-        container.pack(fill="both", expand=True)
-
-        self.canvas = tk.Canvas(container, bg="white", highlightthickness=0)
-        scrollbar = ttk.Scrollbar(container, orient="vertical", command=self.canvas.yview)
+        # Область с прокруткой
+        self.canvas = tk.Canvas(self.root, bg="white", highlightthickness=0)
+        scrollbar = ttk.Scrollbar(self.root, orient="vertical",
+                                   command=self.canvas.yview)
         self.catalog_frame = tk.Frame(self.canvas, bg="white")
-        
-        self.canvas_window = self.canvas.create_window((0, 0), window=self.catalog_frame, anchor="nw")
+        self.catalog_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        )
+        self.canvas.create_window((0, 0), window=self.catalog_frame, anchor="nw")
         self.canvas.configure(yscrollcommand=scrollbar.set)
-        
-        self.canvas.bind('<Configure>', lambda event: self.canvas.itemconfig(self.canvas_window, width=event.width))
-        self.catalog_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
-
-        scrollbar.pack(side="right", fill="y")
         self.canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
 
     def load_products(self):
+        # 🟢 ИСПРАВЛЕНО: Вызываем функцию get_all_products() вместо get_products()
         products = db.get_all_products()
+        
+        # Если база данных пустая или путь к ней указан неверно, выводим ошибку на экран
         if not products:
-            tk.Label(self.catalog_frame, text="⚠ В базе данных не найдено товаров!",
-                     font=(FONT_FAMILY, 12, "bold"), fg="red", bg="white").pack(pady=50)
+            lbl = tk.Label(self.catalog_frame, 
+                           text="⚠ В базе данных не найдено товаров!\nПроверьте DB_PATH в config.py или вывод терминала.",
+                           font=(FONT_FAMILY, 14, "bold"), fg="red", bg="white")
+            lbl.pack(pady=50)
             return
 
+        # Если данные успешно получены — отрисовываем карточки фильмов
         for p in products:
             create_product_card(self.catalog_frame, p)
-            
-        self.root.update_idletasks()
-        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
     def run(self):
         self.root.mainloop()
