@@ -59,39 +59,53 @@ def _add_image(card, product, bg_color):
 
 
 def _add_text_info(card, product, bg_color, qty):
-    """Добавляет текстовую информацию о товаре."""
+    """Добавляет текстовую информацию с обработкой сложных крайних случаев."""
     text_frame = tk.Frame(card, bg=bg_color)
     text_frame.pack(side="left", fill="both", expand=True, padx=10, pady=10)
 
-    # Разбираем поля по вашим индексам из СУБД:
-    genre = product[1]         
-    name = product[2]          
-    duration = product[3]      
-    price = product[4]         
+    # Базовая валидация пустых значений (Задание 5.4)
+    genre = product[1] if product[1] else "[Без жанра]"
+    raw_name = product[2] if product[2] else "[Без названия]"
+    duration = product[3] if product[3] else "[Без длительности]"
+    raw_price = product[4] if product[4] is not None else 0
 
-    # 1. Производство | Наименование (Длительность | Название)
-    _add_label(text_frame, f"{duration} мин. | {name}", bg_color, bold=True, size=FONT_SIZE_HEADER)
+    # 📌 ЗАДАНИЕ 2: Обработка новых крайних случаев
     
-    # 2. Категория (Жанр)
+    # 1. Защита от очень длинного названия (> 100 символов) — обрезаем с троеточием
+    # Это предотвратит размывание или уползание верстки карточки за границы экрана
+    name = (raw_name[:97] + "...") if len(raw_name) > 100 else raw_name
+
+    # 2. Форматирование цены больше 1 000 000 руб.
+    # Если цена огромная, пишем сокращенно "млн руб.", чтобы текст поместился в макет
+    if raw_price >= 1000000:
+        price_text = f"{raw_price / 1000000:.1f} млн руб."
+    else:
+        price_text = f"{raw_price} руб."
+
+    # 3. Кириллические названия поддерживаются автоматически встроенными шрифтами Tkinter,
+    # но для надежности мы гарантируем вывод через f-строки.
+
+    # Отрисовка элементов
+    duration_text = f"{duration} мин." if isinstance(duration, int) else duration
+    _add_label(text_frame, f"{duration_text} | {name}", bg_color, bold=True, size=FONT_SIZE_HEADER)
     _add_label(text_frame, f"Жанр: {genre}", bg_color)
-    
-    # 3. Количество с индикатором порога 5
     _add_label(text_frame, f"В наличии: {_indicator(qty)} ({qty} шт.)", bg_color)
     
-    # Контейнер для цены и кнопки в нижней части
+    # Нижняя панель для цены и кнопки
     bottom_frame = tk.Frame(text_frame, bg=bg_color)
     bottom_frame.pack(fill="x", side="bottom", pady=5)
     
-    # 4. Цена (выравнивание слева)
-    tk.Label(bottom_frame, text=f"Цена: {price} руб.", 
+    # Цена с поддержкой форматирования миллионных сумм
+    tk.Label(bottom_frame, text=f"Цена: {price_text}", 
              font=font(FONT_SIZE_HEADER, bold=True), bg=bg_color).pack(side="left")
     
-    # 5. Кнопка действия фирменного цвета #70B2AF (выравнивание справа)
+    # Кнопка действия
     tk.Button(bottom_frame, text="Купить билет", 
               font=font(FONT_SIZE_NORMAL, bold=True), 
               bg="#70B2AF", fg="white", 
               activebackground="#5A9390", activeforeground="white",
               bd=0, padx=15, pady=5, cursor="hand2").pack(side="right")
+
 
 
 def _add_label(parent, text, bg_color, bold=False, size=FONT_SIZE_NORMAL, align="w"):

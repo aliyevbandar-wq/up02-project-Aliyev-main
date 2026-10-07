@@ -2,15 +2,21 @@
 import tkinter as tk
 from tkinter import ttk
 import os
-import ctypes
+import ctypes  # 🟢 Добавили для фикса иконки на панели задач
 
-if os.name == "nt":
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('cinema.catalog.v1')
+# 📌 ЖЕСТКИЙ ФИКС ДЛЯ ПАНЕЛИ ЗАДАЧ WINDOWS:
+# Заставляем ОС воспринимать окно как отдельное независимое приложение
+try:
+    if os.name == "nt":
+        myappid = 'mycompany.cinema.catalog.v1'  # Любой уникальный ID
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+except Exception:
+    pass
 
 # Импорт стилей по заданию 7.4
 from styles import COLOR_SECONDARY_BG, FONT_FAMILY, FONT_SIZE_TITLE, font
 from config import APP_TITLE
-import db_loader as db  # Подключаем db_loader, где хранятся ваши данные
+import db_loader as db  
 from catalog import create_product_card
 from resources import load_image_proportional, PATH_LOGO, PATH_ICON
 
@@ -79,18 +85,7 @@ class CatalogWindow:
         scrollbar.pack(side="right", fill="y")
 
     def load_products(self):
-        # 🟢 ИСПРАВЛЕНО: Вызываем функцию get_all_products() вместо get_products()
         products = db.get_all_products()
-        
-        # Если база данных пустая или путь к ней указан неверно, выводим ошибку на экран
-        if not products:
-            lbl = tk.Label(self.catalog_frame, 
-                           text="⚠ В базе данных не найдено товаров!\nПроверьте DB_PATH в config.py или вывод терминала.",
-                           font=(FONT_FAMILY, 14, "bold"), fg="red", bg="white")
-            lbl.pack(pady=50)
-            return
-
-        # Если данные успешно получены — отрисовываем карточки фильмов
         for p in products:
             create_product_card(self.catalog_frame, p)
 
