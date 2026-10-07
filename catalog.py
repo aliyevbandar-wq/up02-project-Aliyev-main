@@ -14,7 +14,6 @@ from resources import get_product_image
 
 def create_product_card(parent, product):
     """Создаёт карточку товара по макету с разделительной линией."""
-    # 🟢 ИСПРАВЛЕНО: Восстановили точные числовые индексы вашей БД фильмов!
     genre = product[1]         
     name = product[2]          
     duration = product[3]      
@@ -43,7 +42,16 @@ def create_product_card(parent, product):
         img_label.__dict__['image'] = photo   
         img_label.pack()
     else:
-        tk.Label(img_frame, text="[ПОСТЕР]", bg=bg_color, width=10, height=7).pack()
+        # 📌 ЗАМЕНИЛИ ЗДЕСЬ (Задание 1: Улучшенная заглушка)
+        tk.Label(img_frame, 
+                 text="📷\nНет фото", 
+                 font=font(FONT_SIZE_NORMAL, bold=True), 
+                 fg="#777777", 
+                 bg="#F0F0F0", 
+                 bd=1, 
+                 relief="solid", 
+                 width=12, 
+                 height=7).pack()
 
     # === Текстовая часть ===
     text_frame = tk.Frame(card, bg=bg_color)
@@ -55,6 +63,19 @@ def create_product_card(parent, product):
     
     indicator = "много" if qty > 5 else "мало"
     tk.Label(text_frame, text=f"В наличии: {indicator} ({qty} шт.)", font=font(FONT_SIZE_NORMAL), bg=bg_color, anchor="w").pack(fill="x")
-    tk.Label(text_frame, text=f"Цена: {price} руб.", font=font(FONT_SIZE_HEADER, bold=True), bg=bg_color, anchor="e").pack(fill="x")
+    
+    # 📌 ДОБАВИЛИ КНОПКУ (Задание 2: применение цвета #70B2AF)
+    # Создаем контейнер для нижней строчки с ценой и кнопкой
+    bottom_frame = tk.Frame(text_frame, bg=bg_color)
+    bottom_frame.pack(fill="x", side="bottom", pady=5)
+    
+    tk.Label(bottom_frame, text=f"Цена: {price} руб.", font=font(FONT_SIZE_HEADER, bold=True), bg=bg_color).pack(side="left")
+    
+    # Кнопка фирменного цвета #70B2AF
+    tk.Button(bottom_frame, text="Купить билет", 
+              font=font(FONT_SIZE_NORMAL, bold=True), 
+              bg="#70B2AF", fg="white", 
+              activebackground="#5A9390", activeforeground="white",
+              bd=0, padx=15, pady=5, cursor="hand2").pack(side="right")
 
     return card
