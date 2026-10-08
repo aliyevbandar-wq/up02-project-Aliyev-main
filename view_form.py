@@ -1,11 +1,12 @@
 import tkinter as tk
 from tkinter import ttk
 import tkinter.messagebox as messagebox
-import os  # Добавили импорт os для безопасной проверки наличия иконки
+import os
 
 from styles import font, COLOR_MAIN_BG, FONT_SIZE_HEADER, FONT_SIZE_NORMAL
 from resources import get_product_image
-from error_handler import safe_call
+# Добавили импорт validate_positive_int из вашего модуля
+from error_handler import safe_call, validate_positive_int
 
 
 class ViewForm:
@@ -16,18 +17,16 @@ class ViewForm:
         # Создаем Toplevel окно (поверх главного)
         self.window = tk.Toplevel(parent)
         self.window.title(f"Просмотр товара: {product[2] if product else '[Без названия]'}")
-        self.window.geometry("500x650")
+        self.window.geometry("520x750")  # Увеличили высоту окна под новые элементы
         self.window.configure(bg=COLOR_MAIN_BG)
         self.window.grab_set()  # Делаем окно модальным
 
-        # ✨ СТРОКА ДЛЯ ЗАМЕНЫ ИКОНКИ (ВМЕСТО ПЕРА) ✨
         # Метод iconbitmap меняет иконку в заголовке окна на ваш файл .ico
         icon_path = "resources/icon.ico"
         if os.path.exists(icon_path):
             try:
                 self.window.iconbitmap(icon_path)
             except Exception:
-                # Если формат .ico не поддерживается ОС, используем PhotoImage
                 try:
                     icon_img = tk.PhotoImage(file=icon_path)
                     self.window.iconphoto(False, icon_img)
@@ -49,6 +48,9 @@ class ViewForm:
         
         self.production = product[7] if len(product) > 7 and product[7] else "Россия"
         self.sizes = product[8] if len(product) > 8 and product[8] else "S, M, L, XL"
+        
+        # 📌 ЗАДАНИЕ 1: Поле «Описание» из индекса 9 базы данных
+        self.description = product[9] if len(product) > 9 and product[9] else "Описание отсутствует."
 
         # Списки и переменные для анимации
         self.frames = []
@@ -80,6 +82,21 @@ class ViewForm:
         self._add_info_row(info_frame, "Длительность:", self.duration)
         self._add_info_row(info_frame, "Доступные размеры:", self.sizes)
         self._add_info_row(info_frame, "Цена:", f"{self.price} руб.", is_price=True)
+        
+        # 📌 ЗАДАНИЕ 1: Отрисовка строки «Описание»
+        self._add_info_row(info_frame, "Описание:", self.description)
+
+        # 📌 ЗАДАНИЕ 2: Контейнер и поле ввода количества к заказу
+        qty_frame = tk.Frame(info_frame, bg=COLOR_MAIN_BG, pady=10)
+        qty_frame.pack(fill="x")
+        
+        qty_lbl = tk.Label(qty_frame, text="Количество:", font=font(FONT_SIZE_NORMAL, bold=True), 
+                           fg="#555555", bg=COLOR_MAIN_BG, width=18, anchor="w")
+        qty_lbl.pack(side="left")
+        
+        self.qty_entry = tk.Entry(qty_frame, font=font(FONT_SIZE_NORMAL), width=10)
+        self.qty_entry.insert(0, "1")  # Значение по умолчанию
+        self.qty_entry.pack(side="left")
 
         # Нижняя панель для кнопок
         btn_frame = tk.Frame(self.window, bg=COLOR_MAIN_BG, pady=20)
@@ -103,7 +120,6 @@ class ViewForm:
             self._show_stub()
             return
 
-        # 🟢 ПРОВЕРКА: Если файл — это гифка, запускаем анимацию
         if self.gif_path.lower().endswith('.gif'):
             try:
                 idx = 0
@@ -120,16 +136,13 @@ class ViewForm:
             else:
                 self._show_stub()
                 return
-
-        # 🟢 ЕСЛИ НЕ ГИФКА (PNG/JPG): Загружаем как обычное статичное фото
         else:
             photo = get_product_image(self.gif_path, size=(150, 200))
             if photo:
-                self.img_label.configure(image=photo, text="") # Очищаем текст заглушки
-                self.img_label.__dict__['image'] = photo   # Защита от удаления картинки мусорщиком Python
+                self.img_label.configure(image=photo, text="")
+                self.img_label.__dict__['image'] = photo
             else:
                 self._show_stub()
-
 
     def _update_gif_frame(self):
         """Циклически меняет кадры анимации по таймеру."""
@@ -167,12 +180,24 @@ class ViewForm:
         self.window.destroy()
 
     def _add_to_order_clicked(self):
-        """Обработчик кнопки заказа через безопасный вызов."""
-        safe_call(self._process_order)
+        """Обработчик кнопки заказа с валидацией ввода количества."""
+        # 📌 ЗАДАНИЕ 2: Получаем текст из Entry и проверяем через вашу функцию
+        user_input = self.qty_entry.get()
+        is_valid, result = validate_positive_int(user_input, "Количество")
+        
+        if not is_valid:
+            # Если проверка провалилась, показываем предупреждение и выходим
+            messagebox.showwarning("Ошибка ввода", result)
+            return
+            
+        # 📌 ЗАДАНИЕ 3: Запрос к БД (метод _process_order) обернут в safe_call
+        # Передаем проверенное число в качестве аргумента
+        safe_call(self._process_order, result)
 
-    def _process_order(self):
-        """Логика добавления товара."""
-        messagebox.showinfo("Успех", f"Товар '{self.name}' успешно добавлен в ваш заказ!")
+    def _process_order(self, valid_qty):
+        """Логика добавления товара (имитация запроса к БД)."""
+        # Сюда попадает уже переданное число valid_qty
+        messagebox.showinfo("Успех", f"Товар '{self.name}' (кол-во: {valid_qty} шт.) успешно добавлен в ваш заказ!")
         if self.animation_job:
             self.window.after_cancel(self.animation_job)
         self.window.destroy()
