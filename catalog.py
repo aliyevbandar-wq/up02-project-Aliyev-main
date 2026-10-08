@@ -10,19 +10,28 @@ from resources import get_product_image
 
 
 def create_product_card(parent, product):
-    """Создаёт карточку товара по макету."""
+    """Создаёт карточку товара по макету с print-диагностикой."""
+    # 🟢 Используем индекс 5, так как в вашей БД это количество товара
     qty = product[5]   
     bg_color = _get_card_color(qty)
 
-    # 1. Фон самой карточки (Пункт 5.3) ✅ bg_color
+    # 📌 ЗАДАНИЕ 5.2: Диагностический вывод в консоль
+    print(f"[CARD] id={product[0]}, name={product[2]}, "
+          f"qty={qty}, bg={bg_color}, indicator={_indicator(qty)}")
+
+    # Создание самого фрейма карточки
     card = tk.Frame(parent, bg=bg_color, bd=0, 
                     highlightbackground="#CCCCCC", highlightthickness=1)
+    
+    # ⚠️ ВНИМАНИЕ: Если в вашем main_catalog.py используется card.grid(), 
+    # то строку card.pack() ниже нужно закомментировать или удалить!
     card.pack(fill="x", padx=10, pady=5)
 
     _add_image(card, product, bg_color)
     _add_text_info(card, product, bg_color, qty)
 
     return card
+
 
 
 def _get_card_color(qty):
