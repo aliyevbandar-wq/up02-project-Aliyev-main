@@ -26,6 +26,9 @@ def set_app_icon(root, icon_path):
     try:
         if os.name == "nt":   # Windows
             if os.path.exists(icon_path):
+                # Использование wm_iconbitmap принудительно обновляет иконку в Windows
+                root.wm_iconbitmap(icon_path)
+                # Дополнительный фикс: дублируем иконку для системного меню
                 root.iconbitmap(icon_path)
         else:                  # Linux/Mac
             png_path = icon_path.replace(".ico", ".png")
@@ -35,6 +38,7 @@ def set_app_icon(root, icon_path):
                 root._icon_photo = icon_img   
     except Exception as e:
         print(f"Не удалось установить иконку: {e}")
+
 
 
 class CatalogWindow:
