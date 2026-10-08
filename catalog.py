@@ -124,4 +124,5 @@ def _indicator(qty):
     :param qty: количество товара
     :return: «много» или «мало»
     """
-    return "много" if qty > 5 else "мало"
+    return "много" if qty > 25 else "мало"
+

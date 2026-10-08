@@ -60,9 +60,8 @@ def test_quantity_not_negative():
         return False
 
 
-# 🟢 ДОБАВЛЕННАЯ ФУНКЦИЯ ТЕСТИРОВАНИЯ НАЗВАНИЙ
 def test_names_not_empty():
-    """Проверяет, что у всех товаров есть название."""
+    """Проверяет, что у всех товаров есть название (Задание 6.6)."""
     try:
         products = db.get_all_products()
         for p in products:
@@ -70,8 +69,23 @@ def test_names_not_empty():
                 print(f"❌ Товар id={p[0]}: пустое название")
                 return False
         return True
-    except Exception as e:
-        print(f"❌ Ошибка проверки названий: {e}")
+    except Exception:
+        return False
+
+
+# 🟢 НОВЫЙ ТЕСТ: ПРОВЕРКА ИЗОБРАЖЕНИЙ (Задание 2)
+def test_at_least_one_image_exists():
+    """Проверяет, что хотя бы у одного товара есть изображение."""
+    try:
+        products = db.get_all_products()
+        for p in products:
+            # Индекс 6 — имя файла постера (например, 'avatar.png')
+            if len(p) > 6 and p[6] and str(p[6]).strip() != "":
+                return True  # Как только нашли хотя бы один постер — тест успешно сдан
+        
+        print("❌ Ни у одного фильма в базе данных нет изображения!")
+        return False
+    except Exception:
         return False
 
 
@@ -83,13 +97,14 @@ def run_all_tests():
         ("У всех товаров нужные поля", test_product_fields),
         ("Все цены — числа", test_prices_are_numbers),
         ("Количество не отрицательное", test_quantity_not_negative),
-        
-        # 🟢 Добавлен в список тестов
         ("У всех товаров есть название", test_names_not_empty),
+        
+        # 🟢 Добавлен в общий список тестов (Задание 2)
+        ("Хотя бы у одного товара есть изображение", test_at_least_one_image_exists),
     ]
 
     print("=" * 60)
-    print("ТЕСТИРОВАНИЕ КАТАЛОГА")
+    print("ТЕСТИРОВАНИЕ КАТАЛОГА (РАСШИРЕННОЕ)")
     print("=" * 60)
 
     passed = 0
