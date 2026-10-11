@@ -1,3 +1,4 @@
+"""Загрузчик данных и работа с продуктами БД."""
 import sqlite3
 from config import DB_PATH
 
@@ -5,7 +6,7 @@ from config import DB_PATH
 def get_all_products():
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
-    cur.execute("SELECT * FROM Товар ORDER BY id")
+    cur.execute('SELECT * FROM "Товар" ORDER BY id')
     products = cur.fetchall()
     conn.close()
     return products
@@ -15,17 +16,17 @@ def get_products_by_category(category):
     """Товары по категории."""
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
-    cur.execute("SELECT * FROM Товар WHERE категория = ?", (category,))
+    cur.execute('SELECT * FROM "Товар" WHERE категория = ?', (category,))
     products = cur.fetchall()
     conn.close()
     return products
 
 
 def get_products_low_stock():
-    """Товары с количеством ≤ 3."""
+    """Товары с количеством ≤ 15."""
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
-    cur.execute("SELECT * FROM Товар WHERE количество <= 15")
+    cur.execute('SELECT * FROM "Товар" WHERE количество <= 15')
     products = cur.fetchall()
     conn.close()
     return products
@@ -35,10 +36,29 @@ def get_categories():
     """Список всех категорий."""
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
-    cur.execute("SELECT DISTINCT жанр FROM Товар ORDER BY жанр")
+    cur.execute('SELECT DISTINCT жанр FROM "Товар" ORDER BY жанр')
     categories = [row[0] for row in cur.fetchall()]
     conn.close()
     return categories
+
+
+# 📌 ЗАДАНИЕ 4.4: Функция получения размеров перенесена в общее пространство функций
+def get_product_sizes(product_id):
+    """
+    Возвращает список размеров для товара.
+    :param product_id: id товара
+    :return: список размеров
+    """
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    
+    # Выполняем безопасный запрос к колонке размер
+    cur.execute('SELECT DISTINCT "размер" FROM "Товар" WHERE id = ?', (product_id,))
+    rows = cur.fetchall()
+    conn.close()
+    
+    # Безопасно собираем только непустые элементы
+    return [row[0] for row in rows if row and row[0]]
 
 
 def print_catalog(products):
@@ -48,7 +68,6 @@ def print_catalog(products):
     print("=" * 60)
 
     for p in products:
-        # ⚠️ Замените индексы на свои!
         name = p[2]
         category = p[1]
         price = p[4]
@@ -63,6 +82,7 @@ def print_catalog(products):
     print("=" * 60)
 
 
+# Блок тестирования ВСЕГДА должен находиться в самом низу файла!
 if __name__ == "__main__":
     print("1. Все товары")
     print_catalog(get_all_products())

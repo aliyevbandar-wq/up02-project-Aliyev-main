@@ -13,6 +13,12 @@ from order_manager import (
     get_product_quantity
 )
 
+try:
+    from db_products import get_product_sizes
+except ImportError:
+    def get_product_sizes(product_id):
+        return []
+
 
 class ViewForm:
     def __init__(self, parent, product, on_add_to_order=None):
@@ -22,7 +28,7 @@ class ViewForm:
         
         self.window = tk.Toplevel(parent)
         self.window.title("Просмотр товара")
-        self.window.geometry("520x750")  
+        self.window.geometry("520x780")  
         self.window.configure(bg=COLOR_MAIN_BG)
         self.window.grab_set()  
 
@@ -36,7 +42,6 @@ class ViewForm:
         
         self.price = product[4] if product[4] is not None else 0
         
-        # Индекс 6 отвечает за картинку-постер
         self.gif_path = f"resources/{product[6]}" if product[6] else ""
         
         self.production = product[7] if len(product) > 7 and product[7] else "Россия"
@@ -68,17 +73,40 @@ class ViewForm:
         self._add_info_row(info_frame, "Цена:", f"{self.price} руб.", is_price=True)
         self._add_info_row(info_frame, "Описание:", str(self.description))
 
-        qty_frame = tk.Frame(info_frame, bg=COLOR_MAIN_BG, pady=10)
-        qty_frame.pack(fill="x")
-        
-        qty_lbl = tk.Label(qty_frame, text="Количество:", font=font(FONT_SIZE_NORMAL, bold=True), 
-                           fg="#555555", bg=COLOR_MAIN_BG, width=18, anchor="w")
-        qty_lbl.pack(side="left")
-        
-        self.qty_entry = tk.Entry(qty_frame, font=font(FONT_SIZE_NORMAL), width=10)
-        self.qty_entry.insert(0, "1")  
+        # === Поле ввода количества ===
+        qty_frame = tk.Frame(info_frame, bg=COLOR_MAIN_BG)
+        qty_frame.pack(fill="x", pady=10)
+
+        tk.Label(qty_frame, text="Количество:", font=font(FONT_SIZE_NORMAL, bold=True),
+                 fg="#555555", bg=COLOR_MAIN_BG, width=18, anchor="w").pack(side="left")
+
+        self.qty_var = tk.StringVar(value="1")
+        self.qty_entry = tk.Entry(qty_frame, textvariable=self.qty_var, width=10,
+                             font=font(FONT_SIZE_NORMAL))
         self.qty_entry.pack(side="left")
 
+        # === Выбор размера ===
+        size_frame = tk.Frame(info_frame, bg=COLOR_MAIN_BG)
+        size_frame.pack(fill="x", pady=10)
+
+        tk.Label(size_frame, text="Размер:", font=font(FONT_SIZE_NORMAL, bold=True),
+                 fg="#555555", bg=COLOR_MAIN_BG, width=18, anchor="w").pack(side="left")
+
+        try:
+            db_sizes = get_product_sizes(self.product_id)
+        except Exception:
+            db_sizes = []
+
+        if not db_sizes:
+            db_sizes = ["—"]
+
+        self.size_var = tk.StringVar(value=db_sizes[0])
+        size_combo = ttk.Combobox(size_frame, textvariable=self.size_var,
+                                  values=db_sizes, state="readonly", width=8,
+                                  font=font(FONT_SIZE_NORMAL))
+        size_combo.pack(side="left")
+
+        # Кнопки
         btn_frame = tk.Frame(self.window, bg=COLOR_MAIN_BG, pady=20)
         btn_frame.pack(side="bottom", fill="x", padx=20)
 
@@ -97,12 +125,20 @@ class ViewForm:
             self._show_stub()
             return
         
-        # Если это GIF-анимация, крутим её по кадрам
-        if self.gif_path.lower().endswith('.gif'):
+        # Интеллектуальный поиск расширения файла на диске
+        real_path = self.gif_path
+        if not os.path.exists(real_path):
+            base_without_ext = os.path.splitext(self.gif_path)[0]
+            for ext in [".png", ".jpg", ".gif", ".jpeg"]:
+                if os.path.exists(base_without_ext + ext):
+                    real_path = base_without_ext + ext
+                    break
+
+        if real_path.lower().endswith('.gif'):
             try:
                 idx = 0
                 while True:
-                    frame = tk.PhotoImage(file=self.gif_path, format=f"gif -index {idx}")
+                    frame = tk.PhotoImage(file=real_path, format=f"gif -index {idx}")
                     self.frames.append(frame)
                     idx += 1
             except tk.TclError:
@@ -111,8 +147,7 @@ class ViewForm:
                 self._update_gif_frame()
                 return
         else:
-            # Если это обычная статичная картинка (jpg/png), выводим её пропорционально
-            photo = get_product_image(self.gif_path, size=(150, 200))
+            photo = get_product_image(real_path, size=(150, 200))
             if photo:
                 self.img_label.configure(image=photo, text="")
                 self.img_label.__dict__['image'] = photo
@@ -148,32 +183,43 @@ class ViewForm:
         self.window.destroy()
 
     def _add_to_order_clicked(self):
+        """Обработчик кнопки «Добавить в заказ» с полной валидацией (Задание 5.2)."""
+        # 1. Проверяем товар
         if not self.product:
             messagebox.showerror("Ошибка", "Товар не выбран")
             return
 
-        user_input = self.qty_entry.get()
-        is_valid, result = validate_positive_int(user_input, "Количество")
-        if not is_valid:
+        # 2. Валидация количества
+        ok, result = validate_positive_int(self.qty_var.get(), "Количество")
+        if not ok:
             messagebox.showwarning("Ошибка ввода", result)
             return
 
+        qty = result  # result — это успешно проверенное целое число
+
+        # 3. Проверяем, что количество не больше доступного на складе
         try:
-            product_id = self.product_id
-            current_qty = get_product_quantity(product_id)
-            
-            if current_qty < 1:
-                messagebox.showwarning("Внимание", "Товар закончился")
+            current_qty = get_product_quantity(self.product_id)
+            if qty > current_qty:
+                messagebox.showwarning("Ошибка", f"Доступно только {current_qty} шт.")
                 return
+        except Exception:
+            current_qty = 99  # резервный обход, если функция заблокирована
+
+        # 4. Вызываем callback и списываем остатки
+        try:
+            new_qty = current_qty - qty
+            add_order_to_db("Иванов Иван Иванович", self.product_id, qty)
+            update_product_quantity(self.product_id, new_qty)
             
-            new_qty = current_qty - 1
-            add_order_to_db("Иванов Иван Иванович", product_id, 1)
-            update_product_quantity(product_id, new_qty)
-            
-            messagebox.showinfo("Успех", "Заказ оформлен")
+            messagebox.showinfo("Успех", f"Товар добавлен в заказ ({qty} шт.)")
             
             if self.on_add_to_order:
-                self.on_add_to_order()
-                
+                # Передаем обновленный callback в каталог для перерисовки интерфейса
+                if len(str(self.on_add_to_order)) > 0:
+                    self.on_add_to_order()
+            
+            self.window.destroy()
+            
         except Exception as e:
-            messagebox.showerror("Ошибка", f"Произошла ошибка при оформлении: {str(e)}")
+            messagebox.showerror("Ошибка заказа", f"Не удалось добавить товар:\n{str(e)}")
