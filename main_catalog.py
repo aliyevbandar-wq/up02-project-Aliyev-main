@@ -91,7 +91,17 @@ class CatalogWindow:
     def load_products(self):
         products = db.get_all_products()
         for p in products:
-            create_product_card(self.catalog_frame, p)
+            # 📌 ЗАДАНИЕ 5.6: Передаем ссылку на метод refresh_catalog в аргумент refresh
+            create_product_card(self.catalog_frame, p, refresh=self.refresh_catalog)
+
+    # 📌 ЗАДАНИЕ 5.6: Метод обновления каталога встроен внутрь класса приложения
+    def refresh_catalog(self):
+        """Обновляет каталог."""
+        # Удаляем старые виджеты карточек с экрана
+        for widget in self.catalog_frame.winfo_children():
+            widget.destroy()
+        # Загружаем актуальные данные из базы заново
+        self.load_products()
 
     def run(self):
         self.root.mainloop()

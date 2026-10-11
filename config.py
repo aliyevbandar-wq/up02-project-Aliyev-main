@@ -7,7 +7,8 @@ APP_TITLE = "Кинотеатр — Каталог"
 """Настройки проекта."""
 
 # Путь к БД
-DB_PATH = "databases/db_variant_14.db"   # замените N
+DB_PATH = "db_variant_14.db"
+  # замените N
 
 # Название компании-заказчика
 COMPANY_NAME = "Кино билеты"
