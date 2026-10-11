@@ -1,6 +1,7 @@
 """Каталог товаров (Фильмы)."""
 import tkinter as tk
 from tkinter import ttk
+import os
 
 from styles import (
     COLOR_MAIN_BG, COLOR_HIGHLIGHT,
@@ -10,9 +11,9 @@ from resources import get_product_image
 
 
 def create_product_card(parent, product, refresh=None):
-    """Создаёт карточку товара по макету с print-диагностикой."""
-    # Получаем количество товара из индекса 5 вашей БД
-    qty = product[5] if (hasattr(product, '__getitem__') and len(product) > 5) else 0
+    """Создаёт карточку товара по макету с точной распаковкой."""
+    # В вашей БД количество товара лежит под индексом 5
+    qty = product[5] if (product and len(product) > 5) else 0
     bg_color = _get_card_color(qty)
 
     card = tk.Frame(parent, bg=bg_color, bd=0, 
@@ -22,7 +23,7 @@ def create_product_card(parent, product, refresh=None):
     _add_image(card, product, bg_color)
     _add_text_info(card, product, bg_color, qty)
 
-    # Привязка кликов для открытия формы
+    # Привязка кликов для открытия формы просмотра
     card.bind("<Button-1>", lambda event: _open_view(parent, product, refresh))
 
     for child in card.winfo_children():
@@ -45,15 +46,16 @@ def _get_card_color(qty):
 
 
 def _add_image(card, product, bg_color):
-    """Добавляет изображение товара из индекса 6."""
+    """Добавляет изображение товара из колонки 'постер' (индекс 6)."""
     img_frame = tk.Frame(card, bg=bg_color)
     img_frame.pack(side="left", padx=10, pady=10)
 
-    # Берём точное имя файла картинки из индекса 6 базы данных
-    poster_name = product[6] if (hasattr(product, '__getitem__') and len(product) > 6) else ""
+    # В вашей БД постер лежит строго под индексом 6
+    poster_name = str(product[6]) if (product and len(product) > 6 and product[6]) else ""
     image_path = f"resources/{poster_name}" if poster_name else ""
 
-    photo = get_product_image(image_path, size=(100, 140))
+    photo = get_product_image(image_path, size=(100, 140)) if (image_path and os.path.exists(image_path)) else None
+    
     if photo:
         img_label = tk.Label(img_frame, image=photo, bg=bg_color)
         img_label.__dict__['image'] = photo   
@@ -64,14 +66,15 @@ def _add_image(card, product, bg_color):
 
 
 def _add_text_info(card, product, bg_color, qty):
-    """Добавляет текстовую информацию."""
+    """Добавляет текстовую информацию строго по вашим индексам БД."""
     text_frame = tk.Frame(card, bg=bg_color)
     text_frame.pack(side="left", fill="both", expand=True, padx=10, pady=10)
 
-    genre = product[1] if (hasattr(product, '__getitem__') and len(product) > 1) else "[Без жанра]"
-    raw_name = product[2] if (hasattr(product, '__getitem__') and len(product) > 2) else "[Без названия]"
-    duration = product[3] if (hasattr(product, '__getitem__') and len(product) > 3) else "120"
-    raw_price = product[4] if (hasattr(product, '__getitem__') and len(product) > 4) else 0
+    # 📌 Распаковка по точной структуре вашей таблицы:
+    genre = product[1] if (product and len(product) > 1 and product[1]) else "[Без жанра]"
+    raw_name = product[2] if (product and len(product) > 2 and product[2]) else "[Без названия]"
+    duration = product[3] if (product and len(product) > 3 and product[3]) else "0"
+    raw_price = product[4] if (product and len(product) > 4 and product[4] is not None) else 0
 
     name = (str(raw_name)[:97] + "...") if len(str(raw_name)) > 100 else str(raw_name)
     price_text = f"{raw_price} руб."

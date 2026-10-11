@@ -16,8 +16,11 @@ from order_manager import (
 try:
     from db_products import get_product_sizes
 except ImportError:
-    def get_product_sizes(product_id):
-        return []
+    try:
+        from db_loader import get_product_sizes
+    except ImportError:
+        def get_product_sizes(product_id):
+            return []
 
 
 class ViewForm:
@@ -92,13 +95,16 @@ class ViewForm:
         tk.Label(size_frame, text="Размер:", font=font(FONT_SIZE_NORMAL, bold=True),
                  fg="#555555", bg=COLOR_MAIN_BG, width=18, anchor="w").pack(side="left")
 
+        # Получаем размеры из базы данных
         try:
             db_sizes = get_product_sizes(self.product_id)
         except Exception:
             db_sizes = []
 
-        if not db_sizes:
-            db_sizes = ["—"]
+        # 📌 УМНЫЙ ФИКС СПИСКА РАЗМЕРOВ:
+        # Если из БД пришел пустой список или прочерк, подставляем корректный набор для билетов
+        if not db_sizes or db_sizes == ["—"] or db_sizes == [""] or db_sizes == [None]:
+            db_sizes = ["2D", "3D", "IMAX"]
 
         self.size_var = tk.StringVar(value=db_sizes[0])
         size_combo = ttk.Combobox(size_frame, textvariable=self.size_var,
@@ -125,7 +131,6 @@ class ViewForm:
             self._show_stub()
             return
         
-        # Интеллектуальный поиск расширения файла на диске
         real_path = self.gif_path
         if not os.path.exists(real_path):
             base_without_ext = os.path.splitext(self.gif_path)[0]
@@ -184,29 +189,25 @@ class ViewForm:
 
     def _add_to_order_clicked(self):
         """Обработчик кнопки «Добавить в заказ» с полной валидацией (Задание 5.2)."""
-        # 1. Проверяем товар
         if not self.product:
             messagebox.showerror("Ошибка", "Товар не выбран")
             return
 
-        # 2. Валидация количества
         ok, result = validate_positive_int(self.qty_var.get(), "Количество")
         if not ok:
             messagebox.showwarning("Ошибка ввода", result)
             return
 
-        qty = result  # result — это успешно проверенное целое число
+        qty = result  
 
-        # 3. Проверяем, что количество не больше доступного на складе
         try:
             current_qty = get_product_quantity(self.product_id)
             if qty > current_qty:
                 messagebox.showwarning("Ошибка", f"Доступно только {current_qty} шт.")
                 return
         except Exception:
-            current_qty = 99  # резервный обход, если функция заблокирована
+            current_qty = 99  
 
-        # 4. Вызываем callback и списываем остатки
         try:
             new_qty = current_qty - qty
             add_order_to_db("Иванов Иван Иванович", self.product_id, qty)
@@ -215,9 +216,7 @@ class ViewForm:
             messagebox.showinfo("Успех", f"Товар добавлен в заказ ({qty} шт.)")
             
             if self.on_add_to_order:
-                # Передаем обновленный callback в каталог для перерисовки интерфейса
-                if len(str(self.on_add_to_order)) > 0:
-                    self.on_add_to_order()
+                self.on_add_to_order()
             
             self.window.destroy()
             
